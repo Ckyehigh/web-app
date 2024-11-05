@@ -4,8 +4,8 @@ FROM golang:1.20
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy go mod and sum files
-COPY go.mod ./
+# Copy go mod and sum files (if you have them)
+COPY go.mod go.sum ./
 
 # Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
 RUN go mod download
@@ -13,11 +13,11 @@ RUN go mod download
 # Copy the source code into the container
 COPY . .
 
-# Build the Go app
-RUN go build -o rot13 .
+# Build the Go app (change 'main' to 'rot13' to match your file name)
+RUN go build -o rot13 rot13.go
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
-# Command to run the executable
+# Command to run the executable (use the name 'rot13' here)
 CMD ["./rot13"]
