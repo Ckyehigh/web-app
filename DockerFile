@@ -16,6 +16,9 @@ COPY . .
 # Build the Go app (change 'main' to 'rot13' to match your file name)
 RUN go build -o rot13 rot13.go
 
+# List files in the /app directory to check the build output
+RUN ls -la /app
+
 # Expose port 8080 to the outside world
 EXPOSE 8080
 
