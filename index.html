@@ -2,77 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROT13 Encrypt/Decrypt</title>
+    <title>Encrypt/Decrypt</title>
     <style>
         body {
-            background-color: black; /* Solid black background */
-            color: darkred; /* Dark red text color */
-            font-family: 'Courier New', Courier, monospace;
+            background-color: #2f2f2f;
+            color: #8b0000;
             display: flex;
-            flex-direction: column;
-            align-items: center; /* Center elements horizontally */
-            justify-content: center; /* Center elements vertically */
-            height: 100vh; /* Full height of the viewport */
-            margin: 0; /* Remove default margin */
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            position: relative; /* Position relative for the bars */
+            overflow: hidden; /* Prevent overflow */
         }
-        h1 {
-            margin-bottom: 20px;
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            position: relative; /* Position relative for child elements */
+            z-index: 1; /* Ensure text is above bars */
         }
-        input, button {
+        label, input, select {
+            display: block;
+            margin: 10px auto;
+            width: 80%;
             padding: 10px;
-            margin: 10px;
-            border: 1px solid darkred; /* Dark red border */
+            border: 1px solid #8b0000;
             border-radius: 5px;
-            background-color: white; /* Non-transparent background for input/button */
-            color: black; /* Black text in input/button */
+            background-color: #4f4f4f; /* Input background color */
+            color: #8b0000;
         }
-        button {
-            cursor: pointer; /* Change cursor to pointer for buttons */
+        /* Updated input background color to be opaque */
+        input[type="text"],
+        input[type="number"],
+        select {
+            background-color: #333; /* Solid dark background for input fields */
         }
-        button:hover {
-            background-color: darkred; /* Change button background on hover */
-            color: white; /* Change button text color on hover */
+        input[type="submit"] {
+            background-color: #8b0000;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #a52a2a;
+        }
+        .bars {
+            position: absolute;
+            top: 0;
+            bottom: 0; /* Extend to bottom */
+            width: 50%; /* Occupy half width */
+            background: repeating-linear-gradient(
+                to right,
+                rgba(0, 0, 0, 0.5) 0,
+                rgba(0, 0, 0, 0.5) 5px,
+                transparent 5px,
+                transparent 20px
+            );
+        }
+        .bars.left {
+            left: 0; /* Position on the left */
+        }
+        .bars.right {
+            right: 0; /* Position on the right */
         }
     </style>
 </head>
 <body>
-    <h1>ROT13 Encrypt/Decrypt</h1>
-    <input type="text" id="text" placeholder="Enter text here" required />
-    <input type="number" id="key" placeholder="Enter key" required />
-    <select id="action">
-        <option value="E">Encrypt</option>
-        <option value="D">Decrypt</option>
-    </select>
-    <button onclick="processText()">Submit</button>
-    <h2 id="result"></h2>
+    <div class="bars left"></div>
+    <div class="bars right"></div>
+    <div class="container">
+        <h1>Encrypt/Decrypt Text</h1>
+        <form action="/process" method="post">
+            <label for="text">Text:</label>
+            <input type="text" id="text" name="text" value="{{.Text}}">
+            <label for="key">Key:</label>
+            <input type="number" id="key" name="key" value="{{.Key}}">
+            <label for="action">Action:</label>
+            <select id="action" name="action">
+                <option value="E" {{if eq .Action "E"}}selected{{end}}>Encrypt</option>
+                <option value="D" {{if eq .Action "D"}}selected{{end}}>Decrypt</option>
+            </select>
+            <input type="submit" value="Submit">
+        </form>
 
-    <script>
-        async function processText() {
-            const text = document.getElementById('text').value;
-            const key = document.getElementById('key').value;
-            const action = document.getElementById('action').value;
-
-            // Create the form data object
-            const formData = new URLSearchParams();
-            formData.append("text", text);
-            formData.append("key", key);
-            formData.append("action", action);
-
-            // Send the data as a POST request
-            const response = await fetch('/process', {
-                method: 'POST',
-                body: formData
-            });
-
-            // Check if the response is OK
-            if (response.ok) {
-                const result = await response.text();
-                document.getElementById('result').innerText = result;
-            } else {
-                document.getElementById('result').innerText = 'Error processing request';
-            }
-        }
-    </script>
+        {{if .Result}}
+        <h2>Result</h2>
+        <p>{{.Result}}</p>
+        {{end}}
+    </div>
 </body>
 </html>
