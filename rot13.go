@@ -33,50 +33,51 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func processHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	// Check if the request method is POST
+	if r.Method == http.MethodPost {
+		text := r.FormValue("text")
+		key, err := strconv.Atoi(r.FormValue("key"))
+		if err != nil {
+			http.Error(w, "Invalid key", http.StatusBadRequest)
+			return
+		}
+		action := r.FormValue("action")
+
+		var result string
+		if action == "E" || action == "e" {
+			result = Encrypt(text, key)
+		} else if action == "D" || action == "d" {
+			result = Decrypt(text, key)
+		}
+
+		// Render the index template with results
+		tpl.Execute(w, struct {
+			Text   string
+			Key    int
+			Action string
+			Result string
+		}{
+			Text:   text,
+			Key:    key,
+			Action: action,
+			Result: result,
+		})
+	} else {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
 	}
-
-	text := r.FormValue("text")
-	key, err := strconv.Atoi(r.FormValue("key"))
-	if err != nil {
-		http.Error(w, "Invalid key", http.StatusBadRequest)
-		return
-	}
-	action := r.FormValue("action")
-
-	var result string
-	if action == "E" || action == "e" {
-		result = Encrypt(text, key)
-	} else if action == "D" || action == "d" {
-		result = Decrypt(text, key)
-	}
-
-	tpl.Execute(w, struct {
-		Text   string
-		Key    int
-		Action string
-		Result string
-	}{
-		Text:   text,
-		Key:    key,
-		Action: action,
-		Result: result,
-	})
 }
 
 func Encrypt(text string, key int) string {
 	var result strings.Builder
 	for _, letter := range text {
-		if letter >= 'A' && letter <= 'Z' {
+		if letter >= 'A' && letter <= 'Z' { // Uppercase letters
 			newLetter := (int(letter)-'A'+key)%26 + 'A'
 			result.WriteRune(rune(newLetter))
-		} else if letter >= 'a' && letter <= 'z' {
+		} else if letter >= 'a' && letter <= 'z' { // Lowercase letters
 			newLetter := (int(letter)-'a'+key)%26 + 'a'
 			result.WriteRune(rune(newLetter))
 		} else {
-			result.WriteRune(letter)
+			result.WriteRune(letter) // Keep non-alphabetic characters unchanged
 		}
 	}
 	return result.String()
@@ -85,14 +86,14 @@ func Encrypt(text string, key int) string {
 func Decrypt(encrypted string, key int) string {
 	var result strings.Builder
 	for _, letter := range encrypted {
-		if letter >= 'A' && letter <= 'Z' {
+		if letter >= 'A' && letter <= 'Z' { // Uppercase letters
 			newLetter := (int(letter)-'A'-key+26)%26 + 'A'
 			result.WriteRune(rune(newLetter))
-		} else if letter >= 'a' && letter <= 'z' {
+		} else if letter >= 'a' && letter <= 'z' { // Lowercase letters
 			newLetter := (int(letter)-'a'-key+26)%26 + 'a'
 			result.WriteRune(rune(newLetter))
 		} else {
-			result.WriteRune(letter)
+			result.WriteRune(letter) // Keep non-alphabetic characters unchanged
 		}
 	}
 	return result.String()
