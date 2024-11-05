@@ -38,8 +38,8 @@
 </head>
 <body>
     <h1>ROT13 Encrypt/Decrypt</h1>
-    <input type="text" id="text" placeholder="Enter text here" />
-    <input type="number" id="key" placeholder="Enter key" />
+    <input type="text" id="text" placeholder="Enter text here" required />
+    <input type="number" id="key" placeholder="Enter key" required />
     <select id="action">
         <option value="E">Encrypt</option>
         <option value="D">Decrypt</option>
@@ -53,9 +53,25 @@
             const key = document.getElementById('key').value;
             const action = document.getElementById('action').value;
 
-            const response = await fetch(`/process?text=${encodeURIComponent(text)}&key=${key}&action=${action}`);
-            const result = await response.text();
-            document.getElementById('result').innerText = result;
+            // Create the form data object
+            const formData = new URLSearchParams();
+            formData.append("text", text);
+            formData.append("key", key);
+            formData.append("action", action);
+
+            // Send the data as a POST request
+            const response = await fetch('/process', {
+                method: 'POST',
+                body: formData
+            });
+
+            // Check if the response is OK
+            if (response.ok) {
+                const result = await response.text();
+                document.getElementById('result').innerText = result;
+            } else {
+                document.getElementById('result').innerText = 'Error processing request';
+            }
         }
     </script>
 </body>
