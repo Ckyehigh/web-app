@@ -12,38 +12,31 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: Arial, sans-serif;
         }
         .container {
             text-align: center;
             padding: 20px;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: #333;
             border-radius: 10px;
         }
-        label, input, select {
+        label, input, select, button {
             display: block;
             margin: 10px auto;
             width: 80%;
             padding: 10px;
-            border: 1px solid darkred;
+            border: 1px solid #8b0000;
             border-radius: 5px;
-            background-color: #333; /* Solid dark background for input fields */
-            color: darkred;
-        }
-        input[type="submit"] {
-            background-color: darkred;
+            background-color: #444;
             color: white;
+        }
+        input[type="submit"], button {
+            background-color: #8b0000;
+            color: #ffffff;
             cursor: pointer;
-            width: 60%;
         }
-        input[type="submit"]:hover {
+        input[type="submit"]:hover, button:hover {
             background-color: #a52a2a;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        h2 {
-            margin-top: 20px;
         }
     </style>
 </head>
@@ -52,21 +45,30 @@
         <h1>Encrypt/Decrypt Text</h1>
         <form action="/process" method="post">
             <label for="text">Text:</label>
-            <input type="text" id="text" name="text" value="{{.Text}}" required>
-            <label for="key">Key:</label>
-            <input type="text" id="key" name="key" value="{{.Key}}" required>
+            <input type="text" id="text" name="text">
+            <label for="key">Key (Hexadecimal):</label>
+            <input type="text" id="key" name="key">
+            <button type="button" onclick="generateKey()">Generate Key</button>
             <label for="action">Action:</label>
-            <select id="action" name="action" required>
-                <option value="E" {{if eq .Action "E"}}selected{{end}}>Encrypt</option>
-                <option value="D" {{if eq .Action "D"}}selected{{end}}>Decrypt</option>
+            <select id="action" name="action">
+                <option value="E">Encrypt</option>
+                <option value="D">Decrypt</option>
             </select>
             <input type="submit" value="Submit">
         </form>
-
-        {{if .Result}}
-        <h2>Result</h2>
-        <p>{{.Result}}</p>
-        {{end}}
+        <div id="result-container">
+            {{if .Result}}
+            <h2>Result</h2>
+            <p>{{.Result}}</p>
+            {{end}}
+        </div>
     </div>
+    <script>
+        async function generateKey() {
+            const response = await fetch('/generate-key');
+            const key = await response.text();
+            document.getElementById('key').value = key;
+        }
+    </script>
 </body>
 </html>

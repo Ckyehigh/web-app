@@ -22,6 +22,7 @@ func init() {
 func main() {
 	http.HandleFunc("/", indexHandler)
 	http.HandleFunc("/process", processHandler)
+	http.HandleFunc("/generate-key", generateKeyHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -76,6 +77,15 @@ func processHandler(w http.ResponseWriter, r *http.Request) {
 		Action: action,
 		Result: result,
 	})
+}
+
+func generateKeyHandler(w http.ResponseWriter, r *http.Request) {
+	key, err := generateRandomKey()
+	if err != nil {
+		http.Error(w, "Key generation error", http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprint(w, key)
 }
 
 func generateRandomKey() (string, error) {
