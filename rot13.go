@@ -1,99 +1,72 @@
-package main
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Encrypt/Decrypt</title>
+    <style>
+        body {
+            background-color: black;
+            color: darkred;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        label, input, select {
+            display: block;
+            margin: 10px auto;
+            width: 80%;
+            padding: 10px;
+            border: 1px solid darkred;
+            border-radius: 5px;
+            background-color: #333; /* Solid dark background for input fields */
+            color: darkred;
+        }
+        input[type="submit"] {
+            background-color: darkred;
+            color: white;
+            cursor: pointer;
+            width: 60%;
+        }
+        input[type="submit"]:hover {
+            background-color: #a52a2a;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Encrypt/Decrypt Text</h1>
+        <form action="/process" method="post">
+            <label for="text">Text:</label>
+            <input type="text" id="text" name="text" value="{{.Text}}" required>
+            <label for="key">Key:</label>
+            <input type="text" id="key" name="key" value="{{.Key}}" required>
+            <label for="action">Action:</label>
+            <select id="action" name="action" required>
+                <option value="E" {{if eq .Action "E"}}selected{{end}}>Encrypt</option>
+                <option value="D" {{if eq .Action "D"}}selected{{end}}>Decrypt</option>
+            </select>
+            <input type="submit" value="Submit">
+        </form>
 
-import (
-	"fmt"
-	"html/template"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-)
-
-var tpl *template.Template
-
-func init() {
-	tpl = template.Must(template.ParseFiles("index.html"))
-}
-
-func main() {
-	http.HandleFunc("/", indexHandler)
-	http.HandleFunc("/process", processHandler)
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080" // Default port if not specified
-	}
-
-	fmt.Println("Listening on port:", port)
-	http.ListenAndServe(":"+port, nil)
-}
-
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	tpl.Execute(w, nil)
-}
-
-func processHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	text := r.FormValue("text")
-	key, err := strconv.Atoi(r.FormValue("key"))
-	if err != nil {
-		http.Error(w, "Invalid key", http.StatusBadRequest)
-		return
-	}
-	action := r.FormValue("action")
-
-	var result string
-	if action == "E" || action == "e" {
-		result = Encrypt(text, key)
-	} else if action == "D" || action == "d" {
-		result = Decrypt(text, key)
-	}
-
-	tpl.Execute(w, struct {
-		Text   string
-		Key    int
-		Action string
-		Result string
-	}{
-		Text:   text,
-		Key:    key,
-		Action: action,
-		Result: result,
-	})
-}
-
-func Encrypt(text string, key int) string {
-	var result strings.Builder
-	for _, letter := range text {
-		if letter >= 'A' && letter <= 'Z' {
-			newLetter := (int(letter)-'A'+key)%26 + 'A'
-			result.WriteRune(rune(newLetter))
-		} else if letter >= 'a' && letter <= 'z' {
-			newLetter := (int(letter)-'a'+key)%26 + 'a'
-			result.WriteRune(rune(newLetter))
-		} else {
-			result.WriteRune(letter)
-		}
-	}
-	return result.String()
-}
-
-func Decrypt(encrypted string, key int) string {
-	var result strings.Builder
-	for _, letter := range encrypted {
-		if letter >= 'A' && letter <= 'Z' {
-			newLetter := (int(letter)-'A'-key+26)%26 + 'A'
-			result.WriteRune(rune(newLetter))
-		} else if letter >= 'a' && letter <= 'z' {
-			newLetter := (int(letter)-'a'-key+26)%26 + 'a'
-			result.WriteRune(rune(newLetter))
-		} else {
-			result.WriteRune(letter)
-		}
-	}
-	return result.String()
-}
+        {{if .Result}}
+        <h2>Result</h2>
+        <p>{{.Result}}</p>
+        {{end}}
+    </div>
+</body>
+</html>

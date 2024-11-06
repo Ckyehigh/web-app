@@ -17,7 +17,7 @@
         .container {
             text-align: center;
             padding: 20px;
-            background-color: rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
         }
         label, input, select {
@@ -27,7 +27,7 @@
             padding: 10px;
             border: 1px solid darkred;
             border-radius: 5px;
-            background-color: #000000; /* Solid dark background for input fields */
+            background-color: #333; /* Solid dark background for input fields */
             color: darkred;
         }
         input[type="submit"] {
@@ -54,7 +54,7 @@
             <label for="text">Text:</label>
             <input type="text" id="text" name="text" value="{{.Text}}" required>
             <label for="key">Key:</label>
-            <input type="number" id="key" name="key" value="{{.Key}}" required>
+            <input type="text" id="key" name="key" value="{{.Key}}" required>
             <label for="action">Action:</label>
             <select id="action" name="action" required>
                 <option value="E" {{if eq .Action "E"}}selected{{end}}>Encrypt</option>
