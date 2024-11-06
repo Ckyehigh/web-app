@@ -1,72 +1,128 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Encrypt/Decrypt</title>
-    <style>
-        body {
-            background-color: black;
-            color: darkred;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .container {
-            text-align: center;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-        }
-        label, input, select {
-            display: block;
-            margin: 10px auto;
-            width: 80%;
-            padding: 10px;
-            border: 1px solid darkred;
-            border-radius: 5px;
-            background-color: #333; /* Solid dark background for input fields */
-            color: darkred;
-        }
-        input[type="submit"] {
-            background-color: darkred;
-            color: white;
-            cursor: pointer;
-            width: 60%;
-        }
-        input[type="submit"]:hover {
-            background-color: #a52a2a;
-        }
-        h1 {
-            margin-bottom: 20px;
-        }
-        h2 {
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Encrypt/Decrypt Text</h1>
-        <form action="/process" method="post">
-            <label for="text">Text:</label>
-            <input type="text" id="text" name="text" value="{{.Text}}" required>
-            <label for="key">Key:</label>
-            <input type="text" id="key" name="key" value="{{.Key}}" required>
-            <label for="action">Action:</label>
-            <select id="action" name="action" required>
-                <option value="E" {{if eq .Action "E"}}selected{{end}}>Encrypt</option>
-                <option value="D" {{if eq .Action "D"}}selected{{end}}>Decrypt</option>
-            </select>
-            <input type="submit" value="Submit">
-        </form>
+package main
 
-        {{if .Result}}
-        <h2>Result</h2>
-        <p>{{.Result}}</p>
-        {{end}}
-    </div>
-</body>
-</html>
+import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"html/template"
+	"io"
+	"net/http"
+	"os"
+)
+
+var tpl *template.Template
+
+func init() {
+	tpl = template.Must(template.ParseFiles("index.html"))
+}
+
+func main() {
+	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/process", processHandler)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080" // Default port if not specified
+	}
+
+	fmt.Println("Listening on port:", port)
+	http.ListenAndServe(":"+port, nil)
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	tpl.Execute(w, nil)
+}
+
+func processHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	text := r.FormValue("text")
+	key, err := hex.DecodeString(r.FormValue("key"))
+	if err != nil {
+		http.Error(w, "Invalid key", http.StatusBadRequest)
+		return
+	}
+	action := r.FormValue("action")
+
+	var result string
+	if action == "E" || action == "e" {
+		result, err = Encrypt(text, key)
+		if err != nil {
+			http.Error(w, "Encryption error", http.StatusInternalServerError)
+			return
+		}
+	} else if action == "D" || action == "d" {
+		result, err = Decrypt(text, key)
+		if err != nil {
+			http.Error(w, "Decryption error", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	tpl.Execute(w, struct {
+		Text   string
+		Key    string
+		Action string
+		Result string
+	}{
+		Text:   text,
+		Key:    hex.EncodeToString(key),
+		Action: action,
+		Result: result,
+	})
+}
+
+func generateRandomKey() (string, error) {
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(key), nil
+}
+
+func Encrypt(plainText string, key []byte) (string, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext := make([]byte, aes.BlockSize+len(plainText))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+
+	stream := cipher.NewCFBEncrypter(block, iv)
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], []byte(plainText))
+
+	return base64.URLEncoding.EncodeToString(ciphertext), nil
+}
+
+func Decrypt(cryptoText string, key []byte) (string, error) {
+	ciphertext, err := base64.URLEncoding.DecodeString(cryptoText)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	if len(ciphertext) < aes.BlockSize {
+		return "", fmt.Errorf("ciphertext too short")
+	}
+	iv := ciphertext[:aes.BlockSize]
+	ciphertext = ciphertext[aes.BlockSize:]
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+	stream.XORKeyStream(ciphertext, ciphertext)
+
+	return string(ciphertext), nil
+}
